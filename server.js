@@ -142,3 +142,17 @@ app.post("/add-to-cart", async (req, res) => {
       res.status(500).send({ error: "Failed to process order" });
     }
   });
+
+  
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).send({ error: "Something went wrong!" });
+  });
+  
+  // Start the server
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+  
