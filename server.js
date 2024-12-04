@@ -60,4 +60,19 @@ app.get("/collection/courses", (req, res) => {
         res.status(500).send({ error: "Failed to fetch customer orders" });
     }
   });
+
+  // route to Fetch a specific course by ID
+app.get('/collection/courses/:id', async (req, res) => {
+    const { id } = req.params; // Middleware for handling CORS and headers
+    try {
+        const course = await db.collection('courses').findOne({ _id: new ObjectID(id) });   
+        if (!course) {
+            return res.status(404).send({ error: "Course not found" });
+        }  
+        res.send(course);//return all the courses
+    } catch (error) {
+        console.error("Error fetching course:", error);
+        res.status(500).send({ error: "Failed to fetch course" });
+    }
+  });
   
