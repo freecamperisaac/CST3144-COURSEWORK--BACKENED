@@ -97,3 +97,48 @@ app.post("/collection/:collectionName", (req, res, next) => {
         res.json(result.ops[0]); // Send the inserted document back
     });
   });
+
+  // Store orders in the "CustomerOrders" collection and update inventory
+app.post("/add-to-cart", async (req, res) => {
+    const { cart, order } = req.body; // Extract cart and order details
+    if (!cart || !order) {
+      return res
+        .status(400)
+        .send({ error: "Cart and order details are required" });
+    }
+  
+    try {
+      // insert and Save order to the "CustomerOrders" collection
+      const customerOrder = {
+        orderDetails: order,
+        cartItems: cart,
+        createdAt: new Date(),
+      };
+  
+      // Save the customer order
+      const orderResult = await db
+        .collection("CustomerOrders")
+        .insertOne(customerOrder);
+  
+      // Update inventory for each course in the cart
+      const updatePromises = cart.map((item) =>
+        db
+          .collection("courses")
+          .updateOne(
+            { _id: ObjectID(item.id) },
+            { $inc: { availableInventory: -item.quantity } }
+          )
+      );
+  
+      const results = await Promise.all(updatePromises); // Wait for all updates to complete
+      console.log("Inventory updated successfully", results);
+  
+      res.send({
+        message: "Order successfully saved",
+        orderId: orderResult.insertedId,
+      });
+    } catch (error) {
+      console.error("Error processing order:", error);
+      res.status(500).send({ error: "Failed to process order" });
+    }
+  });
