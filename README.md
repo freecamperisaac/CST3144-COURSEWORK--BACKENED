@@ -1,5 +1,5 @@
 # CST3144-COURSEWORK--BACKENED
-An Intensive class registering website that allow users make a selection of courses and locations by the their preferrence, witha checkout and payment method a smooth usability
+An Intensive class registering website that allow users make a selection of courses and locations by the their preferrence, with a checkout and payment method offering a smooth usability status.
 # Site Links
 https://github.com/freecamperisaac/CST3144-COURSEWORK--BACKENED (backend repository)
 https://github.com/freecamperisaac/CST3144-COURSEWORK -- (git frontend repository)
