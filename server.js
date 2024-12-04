@@ -75,4 +75,9 @@ app.get('/collection/courses/:id', async (req, res) => {
         res.status(500).send({ error: "Failed to fetch course" });
     }
   });
+  // Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send("Something went wrong!");
+  });
   
