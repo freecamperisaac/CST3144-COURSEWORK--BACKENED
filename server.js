@@ -142,6 +142,34 @@ app.post("/add-to-cart", async (req, res) => {
       res.status(500).send({ error: "Failed to process order" });
     }
   });
+  // Route to Update course inventory
+app.put('/collection/courses/:id', async (req, res) => {
+    const { id } = req.params; //extract course ID
+    const { availableInventory } = req.body; // New inventory value
+  
+    if (availableInventory === undefined || availableInventory === null) {
+        return res.status(400).send({ error: 'availableInventory is required' });
+    }
+  
+    try {
+        const collection = db.collection('courses'); // Ensure collection is valid
+        if (!collection) throw new Error("Collection 'courses' not found");
+  
+        const result = await collection.updateOne(
+            { _id: new ObjectID(id) }, // Match the document
+            { $set: { availableInventory } } // Update operation
+        );
+  
+        if (result.matchedCount === 0) {
+            return res.status(404).send({ error: 'Course not found' });
+        }
+  
+        res.send({ message: 'Inventory updated successfully' });
+    } catch (error) {
+        console.error('Error updating inventory:', error);
+        res.status(500).send({ error: 'Failed to update inventory' });
+    }
+  });
 
   
 // Error handling middleware
