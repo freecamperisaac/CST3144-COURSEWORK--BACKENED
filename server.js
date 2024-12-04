@@ -36,3 +36,28 @@ app.use(express.static("public")); // Serve static files from the "public" folde
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "storefront.html"));
 });
+
+// Fetch all courses from the database 
+app.get("/collection/courses", (req, res) => {
+    db.collection("courses")
+      .find({})
+      .toArray((err, courses) => {
+        if (err) {
+          console.error("Error fetching courses:", err);
+          return res.status(500).send({ error: "Failed to fetch courses" });
+        }
+        // return all courses
+        res.send(courses);
+      });
+  });
+        //fetches customers orders
+  app.get("/get-customer-orders", async (req, res) => {
+    try {
+        const orders = await db.collection("CustomerOrders").find({}).toArray();
+        res.send(orders); //return all customers orders
+    } catch (err) {
+        console.error("Error fetching customer orders:", err);
+        res.status(500).send({ error: "Failed to fetch customer orders" });
+    }
+  });
+  
