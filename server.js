@@ -30,6 +30,7 @@ MongoClient.connect(mongoUri, { useUnifiedTopology: true }, (err, client) => {
 });
 // Middleware
 app.use(express.json());
+app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use(express.static("public")); // Serve static files from the "public" folder
 
 // Serve storefront.html as the home page,, routes to the homapage
