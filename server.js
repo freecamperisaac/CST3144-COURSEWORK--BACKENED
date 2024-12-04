@@ -28,3 +28,11 @@ MongoClient.connect(mongoUri, { useUnifiedTopology: true }, (err, client) => {
   db = client.db("webstore");//conection to the webstore database
   console.log("Connected to MongoDB");
 });
+// Middleware
+app.use(express.json());
+app.use(express.static("public")); // Serve static files from the "public" folder
+
+// Serve storefront.html as the home page,, routes to the homapage
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "storefront.html"));
+});
