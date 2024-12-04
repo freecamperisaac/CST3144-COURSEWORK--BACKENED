@@ -34,7 +34,7 @@ app.use(express.static("public")); // Serve static files from the "public" folde
 
 // Serve storefront.html as the home page,, routes to the homapage
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "storefront.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Fetch all courses from the database 
