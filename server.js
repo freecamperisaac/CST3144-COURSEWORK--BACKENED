@@ -7,7 +7,7 @@ const app = express();
 //Middleware to serve uploaded images statically
 app.set("port", 3000);//setup the appliction port
 
-// Middleware for handling CORS and headers
+// Middleware for handling and headers
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -34,7 +34,7 @@ app.use(express.static("public")); // Serve static files from the "public" folde
 
 // Serve storefront.html as the home page,, routes to the homapage
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "storefront.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Fetch all courses from the database 
