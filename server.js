@@ -81,3 +81,19 @@ app.use((err, req, res, next) => {
     res.status(500).send("Something went wrong!");
   });
   
+// Route: Insert a document into a specified collection
+app.post("/collection/:collectionName", (req, res, next) => {
+    const { collectionName } = req.params;// Collection name from the route
+    // Validate the collection name
+    if (!collectionName) {
+        return res.status(400).send({ error: "Collection name is required" });
+    }
+    const collection = db.collection(collectionName); // Get the collection
+    collection.insertOne(req.body, (err, result) => {
+        if (err) {
+            console.error("Error inserting document:", err);
+            return res.status(500).send({ error: "Failed to insert document" });
+        }
+        res.json(result.ops[0]); // Send the inserted document back
+    });
+  });
