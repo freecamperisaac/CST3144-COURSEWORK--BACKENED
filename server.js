@@ -16,3 +16,15 @@ app.use((req, res, next) => {
 
   next();
 });
+//mongodb connection uri
+const mongoUri = "mongodb+srv://admin:admin@cluster0.yohpw.mongodb.net";
+let db;
+//cnnect to mongodb
+MongoClient.connect(mongoUri, { useUnifiedTopology: true }, (err, client) => {
+  if (err) {
+    console.error("Error connecting to MongoDB:", err);
+    process.exit(1);//exits if the connection fails
+  }
+  db = client.db("webstore");//conection to the webstore database
+  console.log("Connected to MongoDB");
+});
