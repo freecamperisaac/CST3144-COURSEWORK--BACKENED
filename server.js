@@ -61,19 +61,7 @@ app.get("/collection/courses", (req, res) => {
         res.status(500).send({ error: "Failed to fetch customer orders" });
     }
   });
-  app.get("/cart", async (req, res) => {
-    try {
-      const userCart = await db.collection("carts").findOne({ userId: "guest" }); // Replace "guest" with actual user/session ID logic
-      if (!userCart) {
-        return res.status(404).send({ message: "Cart not found" });
-      }
-      res.send(userCart);
-    } catch (error) {
-      console.error("Error fetching cart:", error);
-      res.status(500).send({ error: "Failed to fetch cart" });
-    }
-  });
-  
+
   // route to Fetch a specific course by ID
 app.get('/collection/courses/:id', async (req, res) => {
     const { id } = req.params; // Middleware for handling CORS and headers
@@ -110,49 +98,7 @@ app.post("/collection/:collectionName", (req, res, next) => {
         res.json(result.ops[0]); // Send the inserted document back
     });
   });
-  app.post("/cart", async (req, res) => {
-    const { id, quantity = 1 } = req.body; // Accept 'id' instead of 'itemId' and default quantity
-    if (!id || quantity < 1) {
-      return res.status(400).send({ error: "Item ID and a valid quantity are required" });
-    }
-  
-    try {
-      const userId = "guest"; // Replace with actual user/session ID logic
-  
-      // Check if the item already exists in the cart
-      const userCart = await db.collection("carts").findOne({ userId });
-      if (!userCart) {
-        // Create a new cart if it doesn't exist
-        await db.collection("carts").insertOne({
-          userId,
-          items: [{ itemId: id, quantity }],
-        });
-      } else {
-        // Update the cart: Increment quantity if item exists, otherwise add the item
-        const itemExists = userCart.items.find((item) => item.itemId === id);
-  
-        if (itemExists) {
-          await db.collection("carts").updateOne(
-            { userId, "items.itemId": id },
-            { $inc: { "items.$.quantity": quantity } } // Increment quantity
-          );
-        } else {
-          await db.collection("carts").updateOne(
-            { userId },
-            { $push: { items: { itemId: id, quantity } } } // Add new item
-          );
-        }
-      }
-  
-      const updatedCart = await db.collection("carts").findOne({ userId });
-      res.send(updatedCart); // Return the updated cart
-    } catch (error) {
-      console.error("Error adding item to cart:", error);
-      res.status(500).send({ error: "Failed to add item to cart" });
-    }
-  });
-  
-  
+
   // Store orders in the "CustomerOrders" collection and update inventory
 app.post("/add-to-cart", async (req, res) => {
     const { cart, order } = req.body; // Extract cart and order details
@@ -226,22 +172,6 @@ app.put('/collection/courses/:id', async (req, res) => {
     }
   });
 
-  app.put("/cart", async (req, res) => {
-    const { items } = req.body; // Array of items to update
-    if (!items || !Array.isArray(items)) {
-      return res.status(400).send({ error: "Items array is required" });
-    }
-    try {
-      const result = await db.collection("carts").updateOne(
-        { userId: "guest" }, // Replace "guest" with actual user/session ID logic
-        { $set: { items } } // Replace existing cart items with new data
-      );
-      res.send({ message: "Cart updated successfully", result });
-    } catch (error) {
-      console.error("Error updating cart:", error);
-      res.status(500).send({ error: "Failed to update cart" });
-    }
-  });
   
 // Error handling middleware
 app.use((err, req, res, next) => {
