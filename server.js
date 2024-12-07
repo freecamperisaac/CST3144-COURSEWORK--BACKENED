@@ -61,7 +61,19 @@ app.get("/collection/courses", (req, res) => {
         res.status(500).send({ error: "Failed to fetch customer orders" });
     }
   });
-
+  app.get("/cart", async (req, res) => {
+    try {
+      const userCart = await db.collection("carts").findOne({ userId: "guest" }); // Replace "guest" with actual user/session ID logic
+      if (!userCart) {
+        return res.status(404).send({ message: "Cart not found" });
+      }
+      res.send(userCart);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+      res.status(500).send({ error: "Failed to fetch cart" });
+    }
+  });
+  
   // route to Fetch a specific course by ID
 app.get('/collection/courses/:id', async (req, res) => {
     const { id } = req.params; // Middleware for handling CORS and headers
@@ -98,7 +110,27 @@ app.post("/collection/:collectionName", (req, res, next) => {
         res.json(result.ops[0]); // Send the inserted document back
     });
   });
-
+  app.post("/cart", async (req, res) => {
+    const { itemId, quantity } = req.body;
+    if (!itemId || quantity === undefined) {
+      return res.status(400).send({ error: "Item ID and quantity are required" });
+    }
+    try {
+      const result = await db.collection("carts").updateOne(
+        { userId: "guest" }, // Replace "guest" with actual user/session ID logic
+        {
+          $setOnInsert: { userId: "guest", items: [] }, // Create cart if it doesn't exist
+          $push: { items: { itemId, quantity } }, // Add item to the cart
+        },
+        { upsert: true }
+      );
+      res.send({ message: "Item added to cart", result });
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      res.status(500).send({ error: "Failed to add item to cart" });
+    }
+  });
+  
   // Store orders in the "CustomerOrders" collection and update inventory
 app.post("/add-to-cart", async (req, res) => {
     const { cart, order } = req.body; // Extract cart and order details
@@ -172,6 +204,22 @@ app.put('/collection/courses/:id', async (req, res) => {
     }
   });
 
+  app.put("/cart", async (req, res) => {
+    const { items } = req.body; // Array of items to update
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).send({ error: "Items array is required" });
+    }
+    try {
+      const result = await db.collection("carts").updateOne(
+        { userId: "guest" }, // Replace "guest" with actual user/session ID logic
+        { $set: { items } } // Replace existing cart items with new data
+      );
+      res.send({ message: "Cart updated successfully", result });
+    } catch (error) {
+      console.error("Error updating cart:", error);
+      res.status(500).send({ error: "Failed to update cart" });
+    }
+  });
   
 // Error handling middleware
 app.use((err, req, res, next) => {
