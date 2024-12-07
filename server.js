@@ -111,25 +111,47 @@ app.post("/collection/:collectionName", (req, res, next) => {
     });
   });
   app.post("/cart", async (req, res) => {
-    const { itemId, quantity } = req.body;
-    if (!itemId || quantity === undefined) {
-      return res.status(400).send({ error: "Item ID and quantity are required" });
+    const { id, quantity = 1 } = req.body; // Accept 'id' instead of 'itemId' and default quantity
+    if (!id || quantity < 1) {
+      return res.status(400).send({ error: "Item ID and a valid quantity are required" });
     }
+  
     try {
-      const result = await db.collection("carts").updateOne(
-        { userId: "guest" }, // Replace "guest" with actual user/session ID logic
-        {
-          $setOnInsert: { userId: "guest", items: [] }, // Create cart if it doesn't exist
-          $push: { items: { itemId, quantity } }, // Add item to the cart
-        },
-        { upsert: true }
-      );
-      res.send({ message: "Item added to cart", result });
+      const userId = "guest"; // Replace with actual user/session ID logic
+  
+      // Check if the item already exists in the cart
+      const userCart = await db.collection("carts").findOne({ userId });
+      if (!userCart) {
+        // Create a new cart if it doesn't exist
+        await db.collection("carts").insertOne({
+          userId,
+          items: [{ itemId: id, quantity }],
+        });
+      } else {
+        // Update the cart: Increment quantity if item exists, otherwise add the item
+        const itemExists = userCart.items.find((item) => item.itemId === id);
+  
+        if (itemExists) {
+          await db.collection("carts").updateOne(
+            { userId, "items.itemId": id },
+            { $inc: { "items.$.quantity": quantity } } // Increment quantity
+          );
+        } else {
+          await db.collection("carts").updateOne(
+            { userId },
+            { $push: { items: { itemId: id, quantity } } } // Add new item
+          );
+        }
+      }
+  
+      const updatedCart = await db.collection("carts").findOne({ userId });
+      res.send(updatedCart); // Return the updated cart
     } catch (error) {
       console.error("Error adding item to cart:", error);
       res.status(500).send({ error: "Failed to add item to cart" });
     }
   });
+  
   
   // Store orders in the "CustomerOrders" collection and update inventory
 app.post("/add-to-cart", async (req, res) => {
