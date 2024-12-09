@@ -7,20 +7,6 @@ const app = express();
 //Middleware to serve uploaded images statically
 app.set("port", 3000);//setup the appliction port
 
-function logActivity(activity, details = "") {
-    const time = new Date();
-    const formattedTime = time.toLocaleString("en-US", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-    });
-
-    const logMessage = `[${formattedTime}] ${activity}${details ? ` | ${details}` : ""}`;
-    console.log(logMessage);
-}
 
 // Middleware for handling and headers
 app.use((req, res, next) => {
@@ -36,14 +22,13 @@ const mongoUri = "mongodb+srv://admin:admin@cluster0.yohpw.mongodb.net";
 let db;
 //cnnect to mongodb
 MongoClient.connect(mongoUri, { useUnifiedTopology: true }, (err, client) => {
-    if (err) {
-        logActivity("MongoDB Connection Error", err.message);
-        process.exit(1);
-    }
-    db = client.db("webstore");
-    logActivity("MongoDB Connected", "Connected to webstore database");
+  if (err) {
+    console.error("Error connecting to MongoDB:", err);
+    process.exit(1);//exits if the connection fails
+  }
+  db = client.db("webstore");//conection to the webstore database
+  console.log("Connected to MongoDB");
 });
-
 // Middleware
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -57,29 +42,27 @@ app.get("/", (req, res) => {
 // Fetch all courses from the database 
 app.get("/collection/courses", (req, res) => {
     db.collection("courses")
-        .find({})
-        .toArray((err, courses) => {
-            if (err) {
-                logActivity("Fetch Courses Error", err.message);
-                return res.status(500).send({ error: "Failed to fetch courses" });
-            }
-            logActivity("Fetch Courses", `Fetched ${courses.length} courses`);
-            res.send(courses);
-        });
-});
-
+      .find({})
+      .toArray((err, courses) => {
+        if (err) {
+          console.error("Error fetching courses:", err);
+          return res.status(500).send({ error: "Failed to fetch courses" });
+        }
+        // return all courses
+        res.send(courses);
+      });
+  });
         //fetches customers orders
-        app.get("/get-customer-orders", async (req, res) => {
-            try {
-                const orders = await db.collection("CustomerOrders").find({}).toArray();
-                logActivity("Fetch Customer Orders", `Fetched ${orders.length} orders`);
-                res.send(orders);
-            } catch (err) {
-                logActivity("Fetch Customer Orders Error", err.message);
-                res.status(500).send({ error: "Failed to fetch customer orders" });
-            }
-        });
-        
+  app.get("/get-customer-orders", async (req, res) => {
+    try {
+        const orders = await db.collection("CustomerOrders").find({}).toArray();
+        res.send(orders); //return all customers orders
+    } catch (err) {
+        console.error("Error fetching customer orders:", err);
+        res.status(500).send({ error: "Failed to fetch customer orders" });
+    }
+  });
+
   // route to Fetch a specific course by ID
 app.get('/collection/courses/:id', async (req, res) => {
     const { id } = req.params; // Middleware for handling CORS and headers
@@ -118,36 +101,49 @@ app.post("/collection/:collectionName", (req, res, next) => {
   });
 
   // Store orders in the "CustomerOrders" collection and update inventory
-  app.post("/add-to-cart", async (req, res) => {
-    const { cart, order } = req.body;
-
+app.post("/add-to-cart", async (req, res) => {
+    const { cart, order } = req.body; // Extract cart and order details
     if (!cart || !order) {
-        logActivity("Order Processing Error", "Cart or order details missing");
-        return res.status(400).send({ error: "Cart and order details are required" });
+      return res
+        .status(400)
+        .send({ error: "Cart and order details are required" });
     }
 
     try {
-        const customerOrder = { orderDetails: order, cartItems: cart, createdAt: new Date() };
-        const orderResult = await db.collection("CustomerOrders").insertOne(customerOrder);
-        logActivity("Order Saved", `Order ID: ${orderResult.insertedId}`);
-
-        const updatePromises = cart.map((item) =>
-            db.collection("courses").updateOne(
-                { _id: ObjectID(item.id) },
-                { $inc: { availableInventory: -item.quantity } }
-            )
-        );
-
-        await Promise.all(updatePromises);
-        logActivity("Inventory Updated", `Updated inventory for ${cart.length} items`);
-
-        res.send({ message: "Order successfully saved", orderId: orderResult.insertedId });
+      // insert and Save order to the "CustomerOrders" collection
+      const customerOrder = {
+        orderDetails: order,
+        cartItems: cart,
+        createdAt: new Date(),
+      };
+  
+      // Save the customer order
+      const orderResult = await db
+        .collection("CustomerOrders")
+        .insertOne(customerOrder);
+  
+      // Update inventory for each course in the cart
+      const updatePromises = cart.map((item) =>
+        db
+          .collection("courses")
+          .updateOne(
+            { _id: ObjectID(item.id) },
+            { $inc: { availableInventory: -item.quantity } }
+          )
+      );
+  
+      const results = await Promise.all(updatePromises); // Wait for all updates to complete
+      console.log("Inventory updated successfully", results);
+  
+      res.send({
+        message: "Order successfully saved",
+        orderId: orderResult.insertedId,
+      });
     } catch (error) {
-        logActivity("Order Processing Error", error.message);
-        res.status(500).send({ error: "Failed to process order" });
+      console.error("Error processing order:", error);
+      res.status(500).send({ error: "Failed to process order" });
     }
-});
-
+  });
   // Route to Update course inventory
 app.put('/collection/courses/:id', async (req, res) => {
     const { id } = req.params; //extract course ID
@@ -183,8 +179,8 @@ app.use((err, req, res, next) => {
   });
   
   // Start the server
+  const port = process.env.PORT || 3000;
   app.listen(port, () => {
-    logActivity("Server Started", `Server running at http://localhost:${port}`);
-});
-
+    console.log(`Server running at http://localhost:${port}`);
+  });
   
