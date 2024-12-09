@@ -186,6 +186,7 @@ app.put('/collection/courses/:id', async (req, res) => {
             return res.status(404).send({ error: 'Course not found' });
         }
 
+        console.log("Inventory updated successfully", result);
         res.send({ message: 'Inventory updated successfully' });
     } catch (error) {
         console.error('Error updating inventory:', error);
