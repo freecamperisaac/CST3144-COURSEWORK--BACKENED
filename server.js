@@ -7,19 +7,6 @@ const app = express();
 //Middleware to serve uploaded images statically
 app.set("port", 3000);//setup the appliction port
 
-function logActivity(activity, details = "") {
-    const time = new Date();
-    const formattedTime = time.toLocaleString("en-US", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-    });
-    const logMessage = `[${formattedTime}] ${activity}${details ? ` | ${details}` : ""}`;
-    console.log(logMessage);
-}
 // Middleware for handling and headers
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -48,7 +35,7 @@ app.use(express.static("public")); // Serve static files from the "public" folde
 
 // Serve index.html as the home page,, routes to the homapage
 app.get("/", (req, res) => {
-    logActivity("Homepage Accessed");
+    console.log("Homepage Accessed");
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
@@ -58,11 +45,10 @@ app.get("/collection/courses", (req, res) => {
         .find({})
         .toArray((err, courses) => {
             if (err) {
-                logActivity("Error Fetching Courses", err.message);
                 console.error("Error fetching courses:", err);
                 return res.status(500).send({ error: "Failed to fetch courses" });
             }
-            logActivity("Courses Fetched", `Fetched ${courses.length} courses`);
+            console.log("Courses Fetched", `Fetched ${courses.length} courses`);
             // return all courses
             res.send(courses);
         });
@@ -71,10 +57,9 @@ app.get("/collection/courses", (req, res) => {
 app.get("/get-customer-orders", async (req, res) => {
     try {
         const orders = await db.collection("CustomerOrders").find({}).toArray();
-        logActivity("Customer Orders Fetched", `Fetched ${orders.length} orders`);
+        console.log("Customer Orders Fetched", `Fetched ${orders.length} orders`);
         res.send(orders); //return all customers orders
     } catch (err) {
-        logActivity("Error Fetching Customer Orders", err.message);
         console.error("Error fetching customer orders:", err);
         res.status(500).send({ error: "Failed to fetch customer orders" });
     }
@@ -121,7 +106,7 @@ app.post("/collection/:collectionName", (req, res, next) => {
 app.post("/add-to-cart", async (req, res) => {
     const { cart, order } = req.body; // Extract cart and order details
     if (!cart || !order) {
-        logActivity("Add to Cart Failed", "Cart or order details missing");
+        console.error("Add to Cart Failed", "Cart or order details missing");
         return res
             .status(400)
             .send({ error: "Cart and order details are required" });
@@ -151,7 +136,7 @@ app.post("/add-to-cart", async (req, res) => {
         );
 
         const results = await Promise.all(updatePromises); // Wait for all updates to complete
-        logActivity("Order Processed", `Order ID: ${orderResult.insertedId}`);
+
         console.log("Inventory updated successfully", results);
 
         res.send({
@@ -159,7 +144,7 @@ app.post("/add-to-cart", async (req, res) => {
             orderId: orderResult.insertedId,
         });
     } catch (error) {
-        logActivity("Error Processing Order", error.message);
+
         console.error("Error processing order:", error);
         res.status(500).send({ error: "Failed to process order" });
     }
@@ -195,7 +180,6 @@ app.put('/collection/courses/:id', async (req, res) => {
 });
 // Error handling middleware
 app.use((err, req, res, next) => {
-    logActivity("Server Error", err.message);
     console.error(err);
     res.status(500).send({ error: "Something went wrong!" });
 });
@@ -203,6 +187,6 @@ app.use((err, req, res, next) => {
 // Start the server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    logActivity("Server Started", `Running at http://localhost:${port}`);
+    console.log("Server Started", `Running at http://localhost:${port}`);
 });
 
